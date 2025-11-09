@@ -1,0 +1,53 @@
+name: CI
+on:
+  push:
+    branches:
+      - 'development'
+  pull_request:
+    branches:
+      - 'development'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [clang, gcc]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang clang-tools valgrind make
+
+      - name: Set up compiler
+        run: |
+          if [ "${{matrix.compiler}}" = "clang" ]; then
+            echo "CC=clang" >> $GITHUB_ENV
+            echo "CXX=clang++" >> $GITHUB_ENV
+          else
+            echo "CC=gcc" >> $GITHUB_ENV
+            echo "CXX=g++" >> $GITHUB_ENV
+          fi
+      
+      - name: Static analysis with clang-tidy
+        run: |
+          find . -name "*.c" -exec clang-tidy {} -checks='*' -- \;
+        continue-on-error: true
+      
+      - name: Compile with Makefile
+        run: |
+          make CC=$CC
+      
+      - name: Run valgrind (memory checks)
+        run: |
+          if [ -f "./mental" ]; then
+            valgrind --leak-check=full --error-exitcode=1 ./mental
+          fi
+        
+      - name: Build artifacts:
+        run: |
+          make clean
+          make all
