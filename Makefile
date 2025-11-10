@@ -1,8 +1,8 @@
 CC ?= clang
 CFLAGS = -Wall -Wextra -Werror -pedantic -std=c99 -O2
-SRCS = $(wildcard mental/*.c mental/*/*.c)
+SRCS = $(shell find mental -name "*.c" -type f)
 OBJS = $(SRCS:.c=.o)
-TARGET = mental
+TARGET = mental-toolkit
 
 .PHONY: all clean
 
